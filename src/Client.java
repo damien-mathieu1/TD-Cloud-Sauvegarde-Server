@@ -1,6 +1,5 @@
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
+import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
@@ -16,16 +15,10 @@ public class Client {
     System.out.print("Entrez les extensions de fichiers à sauvegarder (séparées par des virgules): ");
     String extensions = scanner.nextLine();
 
-    try {
-      // Initialisation du contexte SSL
-      SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-      SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket(serverIP, 8080);
+    try (Socket socket = new Socket(serverIP, 8080);
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-      // Obtention des flux d'entrée/sortie
-      BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
-      // Envoi des données au serveur
       String data = sourceDir + "|" + serverIP + "|" + extensions;
       writer.write(data + "\n");
       writer.flush();
