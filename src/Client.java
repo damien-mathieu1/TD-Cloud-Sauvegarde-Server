@@ -12,14 +12,17 @@ public class Client {
     System.out.print("Entrez l'adresse IP du serveur: ");
     String serverIP = scanner.nextLine();
 
-    System.out.print("Entrez les extensions de fichiers à sauvegarder (séparées par des virgules): ");
-    String extensions = scanner.nextLine();
+    // Supprimez la partie demandant à l'utilisateur d'entrer les extensions
+    // System.out.print("Entrez les extensions de fichiers à sauvegarder (séparées par des virgules): ");
+    // String extensions = scanner.nextLine();
 
     try (Socket socket = new Socket(serverIP, 8080);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+         BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-      String data = sourceDir + "|" + serverIP + "|" + extensions;
+      // Supprimez la ligne suivante qui envoie les extensions depuis le client
+      // String data = sourceDir + "|" + serverIP + "|" + extensions;
+      String data = sourceDir + "|" + serverIP;
       writer.write(data + "\n");
       writer.flush();
 
