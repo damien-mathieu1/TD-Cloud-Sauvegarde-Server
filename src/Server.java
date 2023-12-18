@@ -40,6 +40,13 @@ public class Server {
       String backupDate = dateFormat.format(new Date());
       String backupDir = "backup_" + backupDate;
 
+      // Create the backup directory if it doesn't exist
+      try {
+        Files.createDirectories(Paths.get(backupDir));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
       // Vérifier si une sauvegarde précédente a déjà eu lieu
       List<String> previousBackupFiles = readPreviousBackupFiles(logFile);
 
