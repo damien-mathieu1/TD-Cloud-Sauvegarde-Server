@@ -11,9 +11,9 @@ Avant d'utiliser l'application, assurez-vous d'avoir Java installé sur votre ma
    - Ouvrez le fichier `extensions.txt` situé dans le répertoire de l'application.
    - Ajoutez les extensions de fichiers que vous souhaitez sauvegarder, une par ligne. Par exemple:
      ```
-     .txt
-     .doc
-     .jpg
+     txt
+     doc
+     jpg
      ```
 
 ## Utilisation
