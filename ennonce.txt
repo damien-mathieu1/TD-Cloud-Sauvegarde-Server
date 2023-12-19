@@ -1,0 +1,17 @@
+En utilisant le protocol TCP/IP et deux ordinateurs l'un etant le server et l'autre le client tu v'as maider à faire un programme java de transfere / sauvegarde de dossier contenant des fichiers. Donne moi un programme complexe et complexe, je veux des fichiers complet avec toutes les implémentations que je te demande.
+
+Coté client :
+- le client va etre demandé a inscire l'adresse ip du server 
+- Affiche à l'écran les extensions comprises dans le fichiers extensions.txt que lui renvoi le server, si le client le souhaite il peux modifier les extensions en ajoutant les nouvelles exetnsions à sauvgarder en ecrasant donc les anciennes informations du fichiers extensions.txt
+- Ensuite le client doit inscrire le chemin du dossier à sauvegarder 
+- si tous c'est bien passée un message en disant que tous a réussi. 
+
+Coté server :
+- le server ce lance 
+- affiche coté client les extensions comprises dans le fichiers extensions.txt 
+- le server recoit le chemin du fichier à sauvegarder, il faut sauvegarder tous les fichiers et sous dossiers contenus dans le dossier donné par l'utilisateur
+- si un des fichiers est déjà contenus dans la sauvegarde alors il faut voir si le fichier envoyé par le client à été modifié comparé au fichier dans la sauvegarde, si le fichier à été modifier chez le client et pas dans la sauvegarde alors il faut le remplacer dans la sauvegarde. 
+- si  tous c'est bien passée un message en disant que tous a réussi. 
+
+
+Pour ce programme fais le dans le language de programme que tu connais le mieux, tu dois absolument tous faire et bien, si tu as des questions demande moi.
