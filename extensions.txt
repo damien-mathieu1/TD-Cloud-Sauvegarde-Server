@@ -1,12 +1,2 @@
 txt
 pdf
-docx
-doc
-pptx
-pages
-yml
-conf
-java
-class
-jpg
-jpeg

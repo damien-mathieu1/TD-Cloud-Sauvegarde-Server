@@ -11,6 +11,10 @@ public class Client {
 
     System.out.print("Entrez l'adresse IP du serveur: ");
     String serverIP = scanner.nextLine();
+    
+    
+    System.out.print("Entrez les extensions à sauvegarder au format (txt,jpeg,jpg) : ");
+    String extensionsDeUser = scanner.nextLine();
 
     // Supprimez la partie demandant à l'utilisateur d'entrer les extensions
     // System.out.print("Entrez les extensions de fichiers à sauvegarder (séparées par des virgules): ");
@@ -22,7 +26,7 @@ public class Client {
 
       // Supprimez la ligne suivante qui envoie les extensions depuis le client
       // String data = sourceDir + "|" + serverIP + "|" + extensions;
-      String data = sourceDir + "|" + serverIP;
+      String data = sourceDir + "|" + serverIP + "|"+ extensionsDeUser;
       writer.write(data + "\n");
       writer.flush();
 

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public class Server {
   public static void main(String[] args) {
     System.out.println("Serveur en attente de connexions...");
-
+	
     try (ServerSocket serverSocket = new ServerSocket(8080)) {
       while (true) {
         Socket clientSocket = serverSocket.accept();
@@ -23,13 +23,41 @@ public class Server {
   private static void handleConnection(Socket clientSocket, String extensionsFile, String logFile) {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
          BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
-
+	
+	
       String data = reader.readLine();
       String[] params = data.split("\\|");
-
+	
+      // récupère le chemin du dossier à sauver
       String sourceDir = new File(params[0]).getAbsolutePath();
+      // récupère l'addresse ip du serveur
       String serverIP = params[1];
-
+      // récupère les extensions à sauver et les mets dans une Array
+      String extensionsDeUser = params[2];
+      System.out.println("extensionsDeUser " + extensionsDeUser);
+      String[] etensionsDeUserArray = extensionsDeUser.split(",");
+      // Affichez le contenu du tableau
+        System.out.print("Tableau d'extensions : [");
+        for (int i = 0; i < etensionsDeUserArray.length; i++) {
+            System.out.print(etensionsDeUserArray[i]);
+            if (i < etensionsDeUserArray.length - 1) {
+                System.out.print(", ");
+            }
+        }
+        System.out.println("]");
+      // inscris les extensions à sauver dans le fichier extensions.txt
+        Path fileName = Path.of("extensions.txt");
+      System.out.println("fileName " + fileName);
+      for (int i = 0; i < etensionsDeUserArray.length; i++) {
+            System.out.print(etensionsDeUserArray[i]);
+            String text = etensionsDeUserArray[i];
+            Files.writeString(fileName, text);
+            if (i < etensionsDeUserArray.length - 1) {
+                System.out.print(", ");
+            }
+        }
+      
+      
       // Lire les extensions depuis le fichier de paramètres
       String[] extensions = readExtensionsFromFile(extensionsFile);
 
