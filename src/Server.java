@@ -52,9 +52,6 @@ public class Server {
       String serverIP = reader.readLine();
       System.out.println("serverIP : " + serverIP);
 
-      // récupère le chemin du dossier à sauver
-      String sourceDir = reader.readLine();
-      System.out.println("sourceDir : " + sourceDir);
 
       // to send data to the client
       PrintStream ps = new PrintStream(clientSocket.getOutputStream());
@@ -107,8 +104,8 @@ public class Server {
       // Lire les extensions depuis le fichier de paramètres
       String[] extensions = readExtensionsFromFile(extensionsFile);
 
-      System.out.printf("Nouvelle sauvegarde demandée depuis %s vers le serveur %s pour les extensions %s%n",
-              sourceDir, serverIP, Arrays.toString(extensions));
+      //System.out.printf("Nouvelle sauvegarde demandée depuis %s vers le serveur %s pour les extensions %s%n",
+      //        sourceDir, serverIP, Arrays.toString(extensions));
 
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
       String backupDate = dateFormat.format(new Date());

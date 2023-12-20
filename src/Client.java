@@ -23,8 +23,7 @@ public class Client {
     scanner.nextLine();
 
       if (value == 1) {
-          System.out.print("Entrez le chemin du dossier à sauvegarder FAUX : ");
-          String sourceDirA = scanner.nextLine();
+
 
           try (Socket socket = new Socket(serverIP, 8080);
                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -36,9 +35,6 @@ public class Client {
               writer.write(serverIP + "\n");
               writer.flush();
 
-              // envoi le chemin au server
-              writer.write(sourceDirA + "\n");
-              writer.flush();
 
               // ICI
               // to send data to the server
