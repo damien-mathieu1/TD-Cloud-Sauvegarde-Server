@@ -46,12 +46,12 @@ public class Client {
               // to read data from the keyboard
               BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
 
-              System.out.println("Extensions deja compris dans extensions.txt , réecrivez les si vous souhaiteé les gardez encore zebi : ");
+              System.out.println("Extensions deja compris dans extensions.txt , réecrivez les si vous souhaiteé les gardez encore : ");
               String str;
               while( !(str = br.readLine()).equals("fin") ){
                   System.out.println(str);
               }
-
+              System.out.println("----"+str+"----");
               System.out.print("Entrez les extensions à sauvegarder au format (txt,jpeg,jpg,...) : ");
               String extensionsDeUser = scanner.nextLine();
 
