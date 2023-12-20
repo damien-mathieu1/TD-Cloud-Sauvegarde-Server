@@ -6,15 +6,16 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Server {
   public static void main(String[] args) {
     System.out.println("Serveur en attente de connexions...");
-	
+    Socket clientSocket = null;
     try (ServerSocket serverSocket = new ServerSocket(8080)) {
       while (true) {
-        Socket clientSocket = serverSocket.accept();
+        clientSocket = serverSocket.accept();
         System.out.println("Client connecté depuis " + clientSocket.getInetAddress());
         int valueSend ;
         BufferedReader reader = null;
@@ -25,7 +26,7 @@ public class Server {
           valueSend = Integer.parseInt(reader.readLine());
           System.out.println(valueSend);
           if(valueSend == 1){
-            handleConnection("extensions.txt", "log.txt", reader, writer);
+            handleConnection(clientSocket,"extensions.txt", reader, writer);
           }
           if( valueSend == 2){
             System.out.println("Telecharger une sauvgarde");
@@ -42,8 +43,8 @@ public class Server {
     }
   }
 
-  private static void handleConnection(String extensionsFile, String logFile, BufferedReader reader, BufferedWriter writer) throws IOException {
-
+  private static void handleConnection(Socket clientSocket ,String extensionsFile, BufferedReader reader, BufferedWriter writer) throws IOException {
+      String[] etensionsDeUserArray = new String[0];
      // String data = reader.readLine();
       //String[] params = data.split("\\|");
 
@@ -51,15 +52,26 @@ public class Server {
       String serverIP = reader.readLine();
       System.out.println("serverIP : " + serverIP);
 
-      // récupère le chemin du dossier à sauver
-      String sourceDir = reader.readLine();
-      System.out.println("sourceDir : " + sourceDir);
 
+      // to send data to the client
+      PrintStream ps = new PrintStream(clientSocket.getOutputStream());
+
+      // to read data coming from the client
+      BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+      // to read data from the keyboard
+      BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
 
       // envoi au client les informations dans extensions.txt
-      // writer.write("txt, jpeg,pdf");
-      // writer.flush();
+      // Lire toutes les lignes du fichier dans une liste
+      List<String> lines = Files.readAllLines(Paths.get("extensions.txt"));
 
+      // Afficher chaque ligne
+      for (String line : lines) {
+          ps.println(line);
+          System.out.println(line);
+      }
+      ps.println("fin");
       // Vider le fichier extensions.txt
       try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("extensions.txt", false)))) {
         // Le fichier est vidé ici
@@ -72,7 +84,7 @@ public class Server {
         // récupérer les extensions à sauver et les mettre dans un tableau
         String extensionsDeUser = reader.readLine();
         System.out.println("extensions du client à sauvegarder : " + extensionsDeUser);
-        String[] etensionsDeUserArray = extensionsDeUser.split(",");
+        etensionsDeUserArray = extensionsDeUser.split(",");
 
         // Inscrire les extensions à sauver dans le fichier extensions.txt
         for (int i = 0; i < etensionsDeUserArray.length; i++) {
@@ -88,18 +100,17 @@ public class Server {
       } catch (IOException e) {
         e.printStackTrace();
       }
-      
-      
+
       // Lire les extensions depuis le fichier de paramètres
       String[] extensions = readExtensionsFromFile(extensionsFile);
 
-      System.out.printf("Nouvelle sauvegarde demandée depuis %s vers le serveur %s pour les extensions %s%n",
-              sourceDir, serverIP, Arrays.toString(extensions));
+      //System.out.printf("Nouvelle sauvegarde demandée depuis %s vers le serveur %s pour les extensions %s%n",
+      //        sourceDir, serverIP, Arrays.toString(extensions));
 
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
       String backupDate = dateFormat.format(new Date());
       String backupDir = "backup_" + backupDate;
-
+      String destinationDir = backupDir;
       // Create the backup directory if it doesn't exist
       try {
         Files.createDirectories(Paths.get(backupDir));
@@ -107,54 +118,46 @@ public class Server {
         e.printStackTrace();
       }
 
-      // Vérifier si une sauvegarde précédente a déjà eu lieu
-      List<String> previousBackupFiles = readPreviousBackupFiles(logFile);
+      InputStream inputStream = clientSocket.getInputStream();
+      ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+      ZipEntry zipEntry;
+      while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+          String entryName = zipEntry.getName();
+          String zipExtension = "";
 
-      Files.walk(Paths.get(sourceDir))
-              .filter(path -> Files.isRegularFile(path) && hasExtension(path.getFileName().toString(), extensions))
-              .filter(path -> isNewOrModifiedFile(path, previousBackupFiles))
-              .forEach(path -> {
-                Path relativePath = Paths.get(sourceDir).relativize(path);
-                String destPath = backupDir + File.separator + relativePath.toString();
+          if (entryName != null && !entryName.isEmpty()) {
+              int lastDotIndex = entryName.lastIndexOf(".");
+              if (lastDotIndex != -1) {
+                  zipExtension = entryName.substring(lastDotIndex + 1);
+              }
+              System.out.println("zipExtension : " + zipExtension);
 
-                // Copier le fichier dans le dossier de sauvegarde avec la structure de dossiers
-                try {
-                  Files.createDirectories(Paths.get(destPath).getParent());
-                  Files.copy(path, Paths.get(destPath), StandardCopyOption.REPLACE_EXISTING);
-                } catch (IOException e) {
-                  e.printStackTrace();
-                }
-              });
+              Path filePath = Paths.get(destinationDir, entryName);
 
-      // Mettre à jour le fichier journal avec les fichiers sauvegardés
-      updateLogFile(logFile, backupDir);
-
-      System.out.printf("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire %s%n", backupDir);
-      writer.write("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire " + backupDir + "\n");
-      writer.flush();
-
-  }
-
-  private static boolean hasExtension(String filename, String[] extensions) {
-    // Obtenez l'extension du fichier
-    int lastDotIndex = filename.lastIndexOf(".");
-    if (lastDotIndex == -1) {
-      // Le fichier n'a pas d'extension, donc ne le sauvegardez pas
-      return false;
-    }
-
-    String fileExtension = filename.substring(lastDotIndex + 1);
-    System.out.println("filename : " + filename);
-    System.out.println("filename ext : " + fileExtension);
-
-    // Vérifiez si l'extension est dans la liste spécifiée
-    for (String ext : extensions) {
-      if (fileExtension.equals(ext)) {
-        return true;
+              // Vérifier si l'extension du fichier est autorisée
+              for (String s : etensionsDeUserArray) {
+                  if(s.equals((zipExtension.toLowerCase()))){
+                      if (zipEntry.isDirectory()) {
+                          Files.createDirectories(filePath);
+                      } else {
+                          // Si c'est un fichier, créez le fichier et copiez les données
+                          Files.createDirectories(filePath.getParent());
+                          try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+                              byte[] buffer = new byte[1024];
+                              int bytesRead;
+                              while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                                  outputStream.write(buffer, 0, bytesRead);
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+          zipInputStream.closeEntry();
       }
-    }
-    return false;
+      System.out.printf("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire %s%n", backupDir);
   }
+
 
   // Méthode pour lire les extensions depuis le fichier
   private static String[] readExtensionsFromFile(String filePath) {
@@ -164,83 +167,6 @@ public class Server {
       e.printStackTrace();
       return new String[0]; // En cas d'erreur, retourne un tableau vide
     }
-  }
-
-  // Méthode pour lire les fichiers sauvegardés précédemment depuis le fichier journal
-  private static List<String> readPreviousBackupFiles(String logFile) {
-    try {
-      return Files.lines(Paths.get(logFile)).collect(Collectors.toList());
-    } catch (IOException e) {
-      // Si le fichier journal n'existe pas, retourne une liste vide
-      return new ArrayList<>();
-    }
-  }
-
-  // Méthode pour déterminer si un fichier est nouveau ou modifié depuis la dernière sauvegarde
-  private static boolean isNewOrModifiedFile(Path filePath, List<String> previousBackupFiles) {
-    try {
-      String fileDetails = filePath.toString() + "|" + Files.getLastModifiedTime(filePath).toMillis();
-      return !previousBackupFiles.contains(fileDetails);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
-
-  // Méthode pour mettre à jour le fichier journal avec les fichiers sauvegardés
-  private static void updateLogFile(String logFile, String backupDir) {
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))) {
-      Files.walk(Paths.get(backupDir))
-              .filter(Files::isRegularFile)
-              .map(path -> path.toString() + "|" + path.toFile().lastModified())
-              .forEach(fileDetails -> {
-                try {
-                  writer.write(fileDetails);
-                  writer.newLine();
-                } catch (IOException e) {
-                  e.printStackTrace();
-                }
-              });
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private static String readFileExtensions() throws IOException {
-    // File path is passed as parameter
-    File file = new File("extensions.txt");
-
-    // Creating an object of BufferedReader class
-    BufferedReader br = null;
-    try {
-      br = new BufferedReader(new FileReader(file));
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-
-    // Déclaration d'un objet StringBuilder
-    StringBuilder result = new StringBuilder();
-
-    // Déclaration d'une variable pour stocker chaque ligne
-    String st;
-
-    // Condition holds true till there is character in a string
-    while ((st = br.readLine()) != null) {
-      // Concaténer la ligne avec une virgule
-      result.append(st).append(",");
-    }
-
-    // Convertir le StringBuilder en une chaîne de caractères
-    String resultString = result.toString();
-
-    // Supprimer la virgule finale si la chaîne n'est pas vide
-    if (!resultString.isEmpty()) {
-      resultString = resultString.substring(0, resultString.length() - 1);
-    }
-
-    // Afficher la chaîne résultante
-    System.out.println(resultString);
-    return resultString;
   }
 
     private static void sendFilesToUser(Socket clientsocket) throws IOException {
@@ -292,10 +218,6 @@ public class Server {
             if(!backupFolders.contains(dossierARecup)){
                 ps.println("le dossier que vous avez choissis n'existe pas");
             }
-            /*
-            ps.println("Ou voulez vous mettre la sauvegarde : ");
-            String cheminSauvegarde = kb.readLine();
-             */
 
             // le dossier de backup existe
             ps.println("La récupération de la sauvegarde est en cours ... \n");
@@ -336,14 +258,6 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
-
-
-
-
-
-
         } else {
             System.out.println("Aucun dossier trouvé dans le dossier courant.");
         }
