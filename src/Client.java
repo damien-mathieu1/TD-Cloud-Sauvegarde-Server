@@ -8,6 +8,7 @@ import java.sql.SQLOutput;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class Client {
   public static void main(String[] args) {
@@ -22,8 +23,8 @@ public class Client {
     scanner.nextLine();
 
       if (value == 1) {
-          System.out.print("Entrez le chemin du dossier à sauvegarder: ");
-          String sourceDir = scanner.nextLine();
+          System.out.print("Entrez le chemin du dossier à sauvegarder FAUX : ");
+          String sourceDirA = scanner.nextLine();
 
           try (Socket socket = new Socket(serverIP, 8080);
                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -34,8 +35,9 @@ public class Client {
               // envoi le serverIP au server
               writer.write(serverIP + "\n");
               writer.flush();
+
               // envoi le chemin au server
-              writer.write(sourceDir + "\n");
+              writer.write(sourceDirA + "\n");
               writer.flush();
 
               System.out.print("Entrez les extensions à sauvegarder au format (txt,jpeg,jpg,...) : ");
@@ -44,14 +46,39 @@ public class Client {
               writer.write(extensionsDeUser + "\n");
               writer.flush();
 
+              System.out.print("Entrez le chemin du dossier à sauvegarder: ");
+              String sourceDir = scanner.nextLine();
+
               System.out.println("Demande de sauvegarde envoyée au serveur.");
-              System.out.println("Réponse du serveur :");
-              String response = reader.readLine();
-              System.out.println(response);
-              return;
+              OutputStream outputStream = socket.getOutputStream();
+              ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+
+              Files.walk(Paths.get(sourceDir))
+                      .forEach(filePath -> {
+                          try {
+                              Path relativePath = Paths.get(sourceDir).relativize(filePath);
+
+                              if (Files.isDirectory(filePath)) {
+                                  // Si c'est un répertoire, ajoutez simplement une entrée au ZIP
+                                  zipOutputStream.putNextEntry(new ZipEntry(relativePath.toString() + "/"));
+                                  zipOutputStream.closeEntry();
+                              } else {
+                                  // Si c'est un fichier, copiez-le dans le ZIP
+                                  zipOutputStream.putNextEntry(new ZipEntry(relativePath.toString()));
+                                  Files.copy(filePath, zipOutputStream);
+                                  zipOutputStream.closeEntry();
+                              }
+                          } catch (IOException e) {
+                              e.printStackTrace();
+                          }
+                      });
+
+              System.out.println("La sauvegarde c'est bien finis");
           } catch (IOException e) {
               e.printStackTrace();
+              return;
           }
+          return;
       }
       if (value == 2) {
         try {

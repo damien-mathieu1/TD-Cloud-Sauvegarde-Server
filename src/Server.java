@@ -6,15 +6,16 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Server {
   public static void main(String[] args) {
     System.out.println("Serveur en attente de connexions...");
-	
+    Socket clientSocket = null;
     try (ServerSocket serverSocket = new ServerSocket(8080)) {
       while (true) {
-        Socket clientSocket = serverSocket.accept();
+        clientSocket = serverSocket.accept();
         System.out.println("Client connecté depuis " + clientSocket.getInetAddress());
         int valueSend ;
         BufferedReader reader = null;
@@ -25,7 +26,7 @@ public class Server {
           valueSend = Integer.parseInt(reader.readLine());
           System.out.println(valueSend);
           if(valueSend == 1){
-            handleConnection("extensions.txt", "log.txt", reader, writer);
+            handleConnection(clientSocket,"extensions.txt", "log.txt", reader, writer);
           }
           if( valueSend == 2){
             System.out.println("Telecharger une sauvgarde");
@@ -42,8 +43,8 @@ public class Server {
     }
   }
 
-  private static void handleConnection(String extensionsFile, String logFile, BufferedReader reader, BufferedWriter writer) throws IOException {
-
+  private static void handleConnection(Socket clientSocket ,String extensionsFile, String logFile, BufferedReader reader, BufferedWriter writer) throws IOException {
+      String[] etensionsDeUserArray = new String[0];
      // String data = reader.readLine();
       //String[] params = data.split("\\|");
 
@@ -72,7 +73,7 @@ public class Server {
         // récupérer les extensions à sauver et les mettre dans un tableau
         String extensionsDeUser = reader.readLine();
         System.out.println("extensions du client à sauvegarder : " + extensionsDeUser);
-        String[] etensionsDeUserArray = extensionsDeUser.split(",");
+        etensionsDeUserArray = extensionsDeUser.split(",");
 
         // Inscrire les extensions à sauver dans le fichier extensions.txt
         for (int i = 0; i < etensionsDeUserArray.length; i++) {
@@ -99,7 +100,7 @@ public class Server {
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
       String backupDate = dateFormat.format(new Date());
       String backupDir = "backup_" + backupDate;
-
+      String destinationDir = backupDir;
       // Create the backup directory if it doesn't exist
       try {
         Files.createDirectories(Paths.get(backupDir));
@@ -107,6 +108,47 @@ public class Server {
         e.printStackTrace();
       }
 
+      InputStream inputStream = clientSocket.getInputStream();
+      ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+      ZipEntry zipEntry;
+      while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+          String entryName = zipEntry.getName();
+          String zipExtension = "";
+
+          if (entryName != null && !entryName.isEmpty()) {
+              int lastDotIndex = entryName.lastIndexOf(".");
+              if (lastDotIndex != -1) {
+                  zipExtension = entryName.substring(lastDotIndex + 1);
+              }
+              System.out.println("zipExtension : " + zipExtension);
+
+              Path filePath = Paths.get(destinationDir, entryName);
+
+              // Vérifier si l'extension du fichier est autorisée
+              for (String s : etensionsDeUserArray) {
+                  if(s.equals((zipExtension.toLowerCase()))){
+                      if (zipEntry.isDirectory()) {
+                          Files.createDirectories(filePath);
+                      } else {
+                          // Si c'est un fichier, créez le fichier et copiez les données
+                          Files.createDirectories(filePath.getParent());
+                          try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+                              byte[] buffer = new byte[1024];
+                              int bytesRead;
+                              while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                                  outputStream.write(buffer, 0, bytesRead);
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+
+
+          zipInputStream.closeEntry();
+      }
+
+      /*
       // Vérifier si une sauvegarde précédente a déjà eu lieu
       List<String> previousBackupFiles = readPreviousBackupFiles(logFile);
 
@@ -128,11 +170,8 @@ public class Server {
 
       // Mettre à jour le fichier journal avec les fichiers sauvegardés
       updateLogFile(logFile, backupDir);
-
+       */
       System.out.printf("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire %s%n", backupDir);
-      writer.write("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire " + backupDir + "\n");
-      writer.flush();
-
   }
 
   private static boolean hasExtension(String filename, String[] extensions) {
