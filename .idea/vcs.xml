@@ -2,5 +2,16 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Application-Web" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Automatisation_de_la_chaine_de_production/exo2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Automatisation_de_la_chaine_de_production/td1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Automatisation_de_la_chaine_de_production/testingcicd" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Continuité_de_services/TD3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/SAE/Services-complexes-CATS" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Td-Virtu/TD-virtualisation" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/Virtualisation_Avancée/welcome-to-docker" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/gatsby-starter-ghost" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/virtu/Application-Web" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backup_2023-12-21/IUT Montpellier/virtu/correctionTP" vcs="Git" />
   </component>
 </project>

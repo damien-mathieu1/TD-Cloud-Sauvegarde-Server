@@ -1,10 +1,8 @@
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -13,60 +11,60 @@ public class Server {
   public static void main(String[] args) {
     System.out.println("Serveur en attente de connexions...");
     Socket clientSocket = null;
+    // ouvre un socket sur le port 8080
     try (ServerSocket serverSocket = new ServerSocket(8080)) {
-      while (true) {
-        clientSocket = serverSocket.accept();
+        // le server reste toujours allumé pour recevoir une connexion
+        while (true) {
+        clientSocket = serverSocket.accept(); // le server accepte les connexions entrantes (dans le while true puisqu'il accepte toujours les connexions)
         System.out.println("Client connecté depuis " + clientSocket.getInetAddress());
         int valueSend ;
-        BufferedReader reader = null;
-        BufferedWriter writer = null;
         try {
-          reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-          writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
-          valueSend = Integer.parseInt(reader.readLine());
-          System.out.println(valueSend);
-          if(valueSend == 1){
-            handleConnection(clientSocket,"extensions.txt", reader, writer);
-          }
-          if( valueSend == 2){
-            System.out.println("Telecharger une sauvgarde");
-            sendFilesToUser(clientSocket);
-          }
+            // le server reçoit si il doit faire une nouvelle sauvegarde ou envoyer une sauvegarde au client.
+            // to send data to the client
+            PrintStream ps = new PrintStream(clientSocket.getOutputStream());
+
+            // to read data coming from the client
+            BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+
+            // to read data from the keyboard
+            BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
+
+            // je dois lire ce que le client m'envois :
+            valueSend = Integer.parseInt(br.readLine());
+            System.out.println(valueSend);
+
+            // si la valeur vaut 1 alors je lance la méthode de sauvegarde
+            if(valueSend == 1){
+                handleConnection(clientSocket,"extensions.txt");
+            }
+            // si la valeur vaut 2 alors je lance la récupération d'une sauvegarde
+            if( valueSend == 2){
+                System.out.println("Telecharger une sauvegarde");
+                sendFilesToUser(clientSocket);
+            }
         }
         catch (IOException e) {
           e.printStackTrace(); // Gérer les exceptions d'entrée/sortie ici
         }
-
       }
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  private static void handleConnection(Socket clientSocket ,String extensionsFile, BufferedReader reader, BufferedWriter writer) throws IOException {
-      String[] etensionsDeUserArray = new String[0];
-     // String data = reader.readLine();
-      //String[] params = data.split("\\|");
-
-      // récupère l'addresse ip du serveur
-      String serverIP = reader.readLine();
-      System.out.println("serverIP : " + serverIP);
-
-
+    private static void handleConnection(Socket clientSocket ,String extensionsFile) throws IOException {
       // to send data to the client
       PrintStream ps = new PrintStream(clientSocket.getOutputStream());
 
       // to read data coming from the client
       BufferedReader br = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
-      // to read data from the keyboard
-      BufferedReader kb = new BufferedReader(new InputStreamReader(System.in));
+      String[] etensionsDeUserArray = new String[0];
 
-      // envoi au client les informations dans extensions.txt
       // Lire toutes les lignes du fichier dans une liste
       List<String> lines = Files.readAllLines(Paths.get("extensions.txt"));
 
-      // Afficher chaque ligne
+      // Afficher chaque ligne - Envoi chaques extensions inscris dans le fichier au client
       for (String line : lines) {
           ps.println(line);
           System.out.println(line);
@@ -82,8 +80,8 @@ public class Server {
       // vide le fichier extensions
       try (PrintWriter fich = new PrintWriter(new BufferedWriter(new FileWriter("extensions.txt", true)))) {
         // récupérer les extensions à sauver et les mettre dans un tableau
-        String extensionsDeUser = reader.readLine();
-        System.out.println("extensions du client à sauvegarder : " + extensionsDeUser);
+        String extensionsDeUser = br.readLine();
+        System.out.println("Extensions du client à sauvegarder : " + extensionsDeUser);
         etensionsDeUserArray = extensionsDeUser.split(",");
 
         // Inscrire les extensions à sauver dans le fichier extensions.txt
@@ -91,21 +89,12 @@ public class Server {
           String text = etensionsDeUserArray[i];
             // Inscrire les nouvelles extensions dans extensions.txt
             fich.println(text);
-          if (i < etensionsDeUserArray.length - 1) {
-            System.out.print(", ");
-          }
         }
         System.out.println("Extensions ajoutées avec succès dans le fichier.");
 
       } catch (IOException e) {
         e.printStackTrace();
       }
-
-      // Lire les extensions depuis le fichier de paramètres
-      String[] extensions = readExtensionsFromFile(extensionsFile);
-
-      //System.out.printf("Nouvelle sauvegarde demandée depuis %s vers le serveur %s pour les extensions %s%n",
-      //        sourceDir, serverIP, Arrays.toString(extensions));
 
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
       String backupDate = dateFormat.format(new Date());
@@ -135,38 +124,27 @@ public class Server {
               Path filePath = Paths.get(destinationDir, entryName);
 
               // Vérifier si l'extension du fichier est autorisée
-              for (String s : etensionsDeUserArray) {
-                  if(s.equals((zipExtension.toLowerCase()))){
-                      if (zipEntry.isDirectory()) {
-                          Files.createDirectories(filePath);
-                      } else {
-                          // Si c'est un fichier, créez le fichier et copiez les données
-                          Files.createDirectories(filePath.getParent());
-                          try (OutputStream outputStream = Files.newOutputStream(filePath)) {
-                              byte[] buffer = new byte[1024];
-                              int bytesRead;
-                              while ((bytesRead = zipInputStream.read(buffer)) != -1) {
-                                  outputStream.write(buffer, 0, bytesRead);
-                              }
-                          }
-                      }
-                  }
-              }
+             for (String s : etensionsDeUserArray) {
+                 if (s.equals((zipExtension.toLowerCase()))) {
+                     if (zipEntry.isDirectory()) {
+                         Files.createDirectories(filePath);
+                     } else {
+                         // Si c'est un fichier, créez le fichier et copiez les données
+                         Files.createDirectories(filePath.getParent());
+                         try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+                             byte[] buffer = new byte[1024];
+                             int bytesRead;
+                             while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                                 outputStream.write(buffer, 0, bytesRead);
+                             }
+                         }
+                     }
+                 }
+             }
           }
           zipInputStream.closeEntry();
       }
       System.out.printf("Sauvegarde terminée. Les fichiers ont été sauvegardés dans le répertoire %s%n", backupDir);
-  }
-
-
-  // Méthode pour lire les extensions depuis le fichier
-  private static String[] readExtensionsFromFile(String filePath) {
-    try {
-      return Files.lines(Paths.get(filePath)).toArray(String[]::new);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return new String[0]; // En cas d'erreur, retourne un tableau vide
-    }
   }
 
     private static void sendFilesToUser(Socket clientsocket) throws IOException {
@@ -197,7 +175,7 @@ public class Server {
         List<String> backupFolders = new ArrayList<>();
 
         // Ajoutez les noms des dossiers de sauvegarde à la liste
-        if (folders != null) {
+        if (folders.length!=0) {
             String listes = "Liste des dossiers dans le dossier courant :";
             // send to client
             ps.println(listes);
