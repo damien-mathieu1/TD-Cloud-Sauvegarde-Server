@@ -12,6 +12,8 @@ import static java.lang.System.exit;
 
 public class Client {
   public static void main(String[] args) {
+      // ajoutér ici
+
 
     Scanner scanner = new Scanner(System.in);
     System.out.print("Entrez l'adresse IP du serveur: ");
@@ -137,8 +139,10 @@ public class Client {
           InputStream inputStream = socket.getInputStream();
           ZipInputStream zipInputStream = new ZipInputStream(inputStream);
           ZipEntry zipEntry;
+          System.out.println("zipInputStream.getNextEntry() : " + zipInputStream.getNextEntry());
           while ((zipEntry = zipInputStream.getNextEntry()) != null) {
               String entryName = zipEntry.getName();
+              System.out.println("entryName : " + entryName);
 
               if (entryName != null && !entryName.isEmpty()) {
                   Path filePath = Paths.get(destinationDir, entryName);
