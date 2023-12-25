@@ -125,24 +125,21 @@ public class Server {
 
                 Path filePath = Paths.get(destinationDir, entryName);
 
-                // Vérifier si l'extension du fichier est autorisée
-                for (String s : etensionsDeUserArray) {
-                    if (s.equals((zipExtension.toLowerCase()))) {
-                        if (zipEntry.isDirectory()) {
-                            Files.createDirectories(filePath);
-                        } else {
-                            // Si c'est un fichier, créez le fichier et copiez les données
-                            Files.createDirectories(filePath.getParent());
-                            try (OutputStream outputStream = Files.newOutputStream(filePath)) {
-                                byte[] buffer = new byte[16];
-                                int bytesRead;
-                                while ((bytesRead = zipInputStream.read(buffer)) != -1) {
-                                    outputStream.write(buffer, 0, bytesRead);
-                                }
-                            }
+                if (zipEntry.isDirectory()) {
+                    Files.createDirectories(filePath);
+                } else {
+                    // Si c'est un fichier, créez le fichier et copiez les données
+                    Files.createDirectories(filePath.getParent());
+                    try (OutputStream outputStream = Files.newOutputStream(filePath)) {
+                        byte[] buffer = new byte[16];
+                        int bytesRead;
+                        while ((bytesRead = zipInputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
                         }
                     }
                 }
+
+
             }
             zipInputStream.closeEntry();
         }
