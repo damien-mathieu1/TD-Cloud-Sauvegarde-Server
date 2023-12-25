@@ -3,6 +3,7 @@
 ## Introduction
 Cette application a été développée pour simplifier le processus de sauvegarde de fichiers en permettant à l'utilisateur de spécifier les extensions de fichiers à sauvegarder en plus de celles de bases qui sont : "txt, pdf, jpg, jpeg, png, docx, xlsx, mp3, mp4, html". 
 Les fichiers sont chiffrés coté client avec la méthode XOR avant d'être envoyé au serveur. 
+Le client déchiffre également les données lorsqu'il les récupère depuis le serveur.
 
 Cette partie est la partie serveur de l'application, pour la partie Client veuillez suivre ce lien [Client](https://github.com/SamyOffer/TD-Cloud-Sauvegarde-Client)
 
